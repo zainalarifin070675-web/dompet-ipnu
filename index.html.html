@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dompet IPNU - PK Ma'had Aly Hasyim Asy'ari</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        @media print {
+            body { background: white; padding: 0; display: block; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            #tab-laporan { display: block !important; padding: 0; margin-top: 20px; }
+            .max-w-md { max-width: 100%; border: none; box-shadow: none; height: auto; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center">
+
+    <div class="w-full max-w-md bg-gray-50 h-screen flex flex-col relative overflow-hidden shadow-2xl md:border-x border-gray-200 print-wrapper">
+        
+        <!-- HEADER MELENGKUNG -->
+        <div class="bg-green-700 px-6 pt-10 pb-24 rounded-b-[2.5rem] text-white flex-shrink-0 relative z-10 no-print">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="font-semibold">Dompet IPNU</h2>
+                    <p class="text-xs text-green-200">PK Ma'had Aly Hasyim Asy'ari</p>
+                </div>
+                <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center border-2 border-green-500 shadow-sm cursor-pointer hover:bg-green-500" onclick="muatData()">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+            </div>
+
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold tracking-tight" id="statSaldo">Rp 0</h1>
+                <p class="text-green-200 text-sm mt-1">Saldo Kas Saat Ini</p>
+            </div>
+
+            <div class="flex justify-between px-2">
+                <div class="flex flex-col items-center gap-2">
+                    <button onclick="setFilterKas('Masuk')" class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition">
+                        <i class="fas fa-arrow-down text-lg"></i>
+                    </button>
+                    <span class="text-[10px] font-medium">Pemasukan</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <button onclick="setFilterKas('Keluar')" class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition">
+                        <i class="fas fa-arrow-up text-lg"></i>
+                    </button>
+                    <span class="text-[10px] font-medium">Pengeluaran</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <button onclick="switchTab('iuran')" class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition">
+                        <i class="fas fa-users text-lg"></i>
+                    </button>
+                    <span class="text-[10px] font-medium">Data Iuran</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <button onclick="switchTab('laporan')" class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition">
+                        <i class="fas fa-print text-lg"></i>
+                    </button>
+                    <span class="text-[10px] font-medium">Cetak LPJ</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AREA KONTEN -->
+        <div class="bg-gray-50 flex-grow -mt-10 rounded-t-[2.5rem] relative z-20 overflow-y-auto pb-24 h-full">
+            
+            <!-- TAB 1: TRANSAKSI -->
+            <div id="tab-home" class="tab-content active px-6 pt-8 no-print">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold text-gray-800">Riwayat Transaksi</h3>
+                    <span class="text-sm font-semibold text-green-700 cursor-pointer" onclick="muatData()">Refresh</span>
+                </div>
+
+                <div class="flex gap-3 mb-6 overflow-x-auto pb-2">
+                    <button onclick="setFilterKas('Semua')" class="filter-pill active px-4 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 transition">Semua</button>
+                    <button onclick="setFilterKas('Masuk')" class="filter-pill px-4 py-1.5 rounded-full text-xs font-bold bg-white text-gray-400 border shadow-sm transition">Pemasukan</button>
+                    <button onclick="setFilterKas('Keluar')" class="filter-pill px-4 py-1.5 rounded-full text-xs font-bold bg-white text-gray-400 border shadow-sm transition">Pengeluaran</button>
+                </div>
+
+                <div id="listKas" class="flex flex-col gap-4">
+                    <div class="text-center text-gray-400 py-10 text-sm">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2 text-green-600"></i><br>Memuat data...
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: IURAN -->
+            <div id="tab-iuran" class="tab-content px-6 pt-8 no-print">
+                <h3 class="text-lg font-bold text-gray-800 mb-6">Status Iuran Bulanan</h3>
+                <div id="listIuran" class="flex flex-col gap-4"></div>
+            </div>
+
+            <!-- TAB 3: LAPORAN (LPJ) -->
+            <div id="tab-laporan" class="tab-content px-6 pt-8">
+                <div class="print-only hidden text-center mb-8 border-b-2 border-black pb-4">
+                    <h2 class="text-2xl font-bold uppercase">Laporan Keuangan Kas</h2>
+                    <h3 class="text-lg font-semibold uppercase">Pengurus Komisariat IPNU Mahad Aly Hasyim Asy'ari</h3>
+                </div>
+
+                <h3 class="text-lg font-bold text-gray-800 mb-6 no-print">Laporan Keuangan</h3>
+                
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase mb-4">Ringkasan Arus Kas</h4>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-600 text-sm">Total Pemasukan (Keseluruhan)</span>
+                        <span class="font-bold text-green-600 text-sm" id="lapMasuk">Rp 0</span>
+                    </div>
+                    <div class="flex justify-between mb-4">
+                        <span class="text-gray-600 text-sm">Total Pengeluaran (Keseluruhan)</span>
+                        <span class="font-bold text-red-600 text-sm" id="lapKeluar">Rp 0</span>
+                    </div>
+                    <div class="border-t border-dashed border-gray-300 pt-3 flex justify-between">
+                        <span class="text-gray-800 font-bold">Saldo Akhir Kas</span>
+                        <span class="font-bold text-gray-800 text-lg" id="lapSaldo">Rp 0</span>
+                    </div>
+                </div>
+
+                <button onclick="cetakLaporan()" class="no-print w-full bg-blue-50 text-blue-600 border border-blue-200 p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition active:scale-95 shadow-sm">
+                    <i class="fas fa-file-pdf"></i> Simpan / Cetak (PDF)
+                </button>
+
+                <div class="print-only hidden mt-16 flex justify-end">
+                    <div class="text-center">
+                        <p class="mb-16">Jombang, <span id="tglCetak"></span><br>Bendahara,</p>
+                        <p class="font-bold underline">Muhammad Sulthon</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: PROFIL -->
+            <div id="tab-profil" class="tab-content px-6 pt-8 no-print">
+                <h3 class="text-lg font-bold text-gray-800 mb-6">Profil Pengguna</h3>
+                
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center mb-6 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-16 bg-green-700"></div>
+                    <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center text-green-600 mb-4 text-4xl border-4 border-white shadow-md relative z-10 mt-4">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sulthon" alt="Avatar" class="w-full h-full rounded-full">
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Muhammad Sulthon</h2>
+                    <p class="text-xs font-medium text-green-700 bg-green-50 px-3 py-1 rounded-full mt-2">Bendahara PK IPNU Mahad Aly Hasyim Asy'ari</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <button class="w-full flex items-center justify-between p-4 border-b hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-3 text-gray-700">
+                            <i class="fas fa-file-excel w-5 text-center text-green-600"></i> 
+                            <span class="font-semibold text-sm">Database Google Sheets</span>
+                        </div>
+                        <i class="fas fa-external-link-alt text-gray-300 text-sm"></i>
+                    </button>
+                    <button class="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-3 text-red-600">
+                            <i class="fas fa-sign-out-alt w-5 text-center"></i> 
+                            <span class="font-semibold text-sm">Keluar Aplikasi</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <div class="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 flex justify-between items-center px-6 py-2 pb-safe z-40 rounded-t-2xl shadow-[0_-5px_15px_rgba(0,0,0,0.05)] no-print">
+            <button onclick="switchTab('home')" class="nav-btn active flex flex-col items-center p-2 text-green-700 transition" id="nav-home">
+                <i class="fas fa-home text-xl mb-1"></i>
+                <span class="text-[9px] font-semibold">Home</span>
+            </button>
+            <button onclick="switchTab('iuran')" class="nav-btn flex flex-col items-center p-2 text-gray-400 hover:text-green-600 transition mr-8" id="nav-iuran">
+                <i class="fas fa-users text-xl mb-1"></i>
+                <span class="text-[9px] font-semibold">Iuran</span>
+            </button>
+            
+            <button onclick="bukaModal()" class="absolute left-1/2 -top-6 transform -translate-x-1/2 bg-green-600 hover:bg-green-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-[0_8px_20px_rgba(22,163,74,0.4)] border-4 border-white transition active:scale-95">
+                <i class="fas fa-plus text-xl"></i>
+            </button>
+
+            <button onclick="switchTab('laporan')" class="nav-btn flex flex-col items-center p-2 text-gray-400 hover:text-green-600 transition ml-8" id="nav-laporan">
+                <i class="fas fa-chart-pie text-xl mb-1"></i>
+                <span class="text-[9px] font-semibold">Laporan</span>
+            </button>
+            <button onclick="switchTab('profil')" class="nav-btn flex flex-col items-center p-2 text-gray-400 hover:text-green-600 transition" id="nav-profil">
+                <i class="fas fa-user text-xl mb-1"></i>
+                <span class="text-[9px] font-semibold">Profil</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL FORM -->
+    <div id="modalForm" class="fixed inset-0 bg-black/60 hidden items-end sm:items-center justify-center z-50 transition-opacity no-print">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 shadow-2xl transform transition-transform" id="modalContent">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-gray-800">Catat Transaksi</h3>
+                <button onclick="tutupModal()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 font-bold">&times;</button>
+            </div>
+            
+            <form id="formKas" class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Keterangan</label>
+                    <input type="text" name="keterangan" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:bg-white transition" placeholder="Contoh: Konsumsi Rapat">
+                </div>
+                <div class="flex gap-4">
+                    <div class="w-1/2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipe</label>
+                        <select name="tipe" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 font-semibold text-gray-700">
+                            <option value="Masuk">Masuk (+)</option>
+                            <option value="Keluar">Keluar (-)</option>
+                        </select>
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategori</label>
+                        <select name="kategori" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-gray-700">
+                            <option value="Operasional">Operasional</option>
+                            <option value="Kegiatan">Kegiatan</option>
+                            <option value="Iuran">Iuran</option>
+                            <option value="Donatur">Donatur</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nominal (Rp)</label>
+                    <input type="number" name="nominal" required class="w-full p-3 text-xl font-bold bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:bg-white" placeholder="0">
+                </div>
+                <button type="submit" id="btnSubmit" class="w-full bg-green-700 text-white p-4 rounded-xl font-bold text-lg mt-4 shadow-lg hover:bg-green-800 transition active:scale-95">Simpan Data</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL LOADING -->
+    <div id="loadingAction" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] backdrop-blur-sm no-print">
+        <div class="bg-white p-6 rounded-2xl text-center shadow-2xl flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin mb-3"></div>
+            <p class="font-bold text-gray-700">Memproses...</p>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // === MASUKKAN URL GOOGLE APPS SCRIPT DI BAWAH INI ===
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzcAze1D5_8zISUG8S9PdAPvpMUi4fTXz58gKVtGTOAc-4RETq8j3ZOAB_sNTxDPlVVHQ/exec'; 
+        // ====================================================
+
+        let rawDataCache = null;
+        let filterAktif = 'Semua';
+
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-green-700');
+                el.classList.add('text-gray-400');
+            });
+            document.getElementById('nav-' + tabName).classList.add('text-green-700');
+            document.getElementById('nav-' + tabName).classList.remove('text-gray-400');
+        }
+
+        const modal = document.getElementById('modalForm');
+        function bukaModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        function tutupModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('formKas').reset(); }
+
+        function cetakLaporan() {
+            const date = new Date();
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            document.getElementById('tglCetak').innerText = date.toLocaleDateString('id-ID', options);
+            window.print();
+        }
+
+        function muatData() {
+            document.getElementById('listKas').innerHTML = '<div class="text-center py-10"><div class="w-8 h-8 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin mx-auto mb-2"></div><p class="text-sm text-gray-500">Memuat transaksi...</p></div>';
+            
+            fetch(scriptURL)
+                .then(res => res.json())
+                .then(data => {
+                    rawDataCache = data;
+                    
+                    // Hitung total keseluruhan pemasukan & pengeluaran dari dataKas untuk menu Laporan
+                    let totalMasukGlobal = 0;
+                    let totalKeluarGlobal = 0;
+                    
+                    data.dataKas.forEach(row => {
+                        let nominalRaw = parseFloat(String(row[4]).replace(/[Rp\s,.]/g, '')) || 0;
+                        if(row[3] === 'Masuk') {
+                            totalMasukGlobal += nominalRaw;
+                        } else if(row[3] === 'Keluar') {
+                            totalKeluarGlobal += nominalRaw;
+                        }
+                    });
+
+                    // Update Saldo Home
+                    document.getElementById('statSaldo').innerText = formatRupiah(data.stats.saldo);
+                    
+                    // Update Saldo Laporan LPJ
+                    document.getElementById('lapSaldo').innerText = formatRupiah(data.stats.saldo);
+                    document.getElementById('lapMasuk').innerText = formatRupiah(totalMasukGlobal);
+                    document.getElementById('lapKeluar').innerText = formatRupiah(totalKeluarGlobal);
+
+                    renderListKas(data.dataKas, filterAktif);
+                    renderListIuran(data.dataIuran);
+                })
+                .catch(err => {
+                    document.getElementById('listKas').innerHTML = '<p class="text-center text-red-500 py-10 text-sm">Gagal terhubung ke database.</p>';
+                });
+        }
+
+        function setFilterKas(tipe) {
+            filterAktif = tipe;
+            const tabs = document.querySelectorAll('.filter-pill');
+            tabs.forEach(tab => {
+                tab.classList.remove('bg-green-100', 'text-green-700');
+                tab.classList.add('bg-white', 'text-gray-400', 'border');
+            });
+            const activeTab = Array.from(tabs).find(t => t.innerText.includes(tipe));
+            if(activeTab) {
+                activeTab.classList.remove('bg-white', 'text-gray-400', 'border');
+                activeTab.classList.add('bg-green-100', 'text-green-700');
+            }
+            if(rawDataCache) renderListKas(rawDataCache.dataKas, tipe);
+            switchTab('home'); 
+        }
+
+        function renderListKas(dataKas, filter) {
+            const wadah = document.getElementById('listKas');
+            wadah.innerHTML = ''; 
+            
+            const filteredData = dataKas.filter(row => filter === 'Semua' || row[3] === filter);
+
+            if(filteredData.length === 0) {
+                wadah.innerHTML = '<div class="text-center text-gray-400 py-8 bg-white rounded-2xl border border-dashed text-sm">Belum ada transaksi.</div>';
+                return;
+            }
+
+            filteredData.forEach(row => {
+                let isMasuk = row[3] === 'Masuk';
+                let iconBg = isMasuk ? 'bg-green-50' : 'bg-red-50';
+                let iconColor = isMasuk ? 'text-green-500' : 'text-gray-800';
+                let iconClass = isMasuk ? 'fa-wallet' : 'fa-shopping-bag';
+                let colorAmount = isMasuk ? 'text-green-600' : 'text-gray-800';
+                let operator = isMasuk ? '+' : '-';
+                let tgl = row[0].split(' ')[0];
+                
+                let div = `
+                <div class="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center ${iconBg}">
+                            <i class="fas ${iconClass} ${iconColor} text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm mb-0.5 line-clamp-1">${row[1]}</p>
+                            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">${row[2]}</p>
+                        </div>
+                    </div>
+                    <div class="text-right pl-2">
+                        <p class="font-bold ${colorAmount} text-sm whitespace-nowrap">${operator} ${formatRupiah(row[4]).replace('Rp', '')}</p>
+                        <p class="text-[10px] font-semibold text-gray-400 mt-1">${tgl}</p>
+                    </div>
+                </div>`;
+                wadah.innerHTML += div;
+            });
+        }
+
+        function renderListIuran(dataIuran) {
+            const wadah = document.getElementById('listIuran');
+            wadah.innerHTML = ''; 
+
+            if(dataIuran.length === 0) { wadah.innerHTML = '<p class="text-center text-gray-400 py-8 text-sm">Data iuran kosong.</p>'; return; }
+
+            dataIuran.forEach(row => {
+                const [idIuran, nama, bulan, status] = row;
+                let isLunas = status === 'Lunas';
+                
+                let btnAksi = isLunas 
+                    ? `<span class="bg-green-50 text-green-600 px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fas fa-check mr-1"></i> Lunas</span>`
+                    : `<button onclick="prosesLunas('${idIuran}', '${nama}', '${bulan}')" class="bg-red-50 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition">Tandai Lunas</button>`;
+
+                let div = `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">${nama}</p>
+                            <p class="text-[11px] font-medium text-gray-400">${bulan}</p>
+                        </div>
+                    </div>
+                    <div>${btnAksi}</div>
+                </div>`;
+                wadah.innerHTML += div;
+            });
+        }
+
+        function prosesLunas(id, nama, bulan) {
+            if(!confirm(`Tandai iuran ${nama} (${bulan}) Lunas?`)) return;
+            document.getElementById('loadingAction').classList.replace('hidden', 'flex');
+            const fd = new FormData();
+            fd.append('action', 'lunas'); fd.append('idIuran', id); fd.append('namaAnggota', nama); fd.append('bulanIuran', bulan);
+            fetch(scriptURL, { method: 'POST', body: fd })
+                .then(() => { document.getElementById('loadingAction').classList.replace('flex', 'hidden'); muatData(); })
+                .catch(() => { alert('Gagal memproses!'); document.getElementById('loadingAction').classList.replace('flex', 'hidden'); });
+        }
+
+        document.getElementById('formKas').addEventListener('submit', e => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Menyimpan...';
+            fetch(scriptURL, { method: 'POST', body: new FormData(e.target) })
+                .then(() => { tutupModal(); btn.innerHTML = 'Simpan Data'; muatData(); })
+                .catch(() => { alert('Gagal menyimpan data!'); btn.innerHTML = 'Simpan Data'; });
+        });
+
+        muatData();
+    </script>
+</body>
+</html>
